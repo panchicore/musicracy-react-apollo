@@ -7,11 +7,14 @@ function Info({radio, user}){
     window.open(`/player/${radio.id}`, '_blank')
   }
 
+  const radioJoinUrl = `${window.location.origin}/join/${radio.hash}`
+
   return (
     <Box m={2} p={2}>
       <Typography>I am {user.name}</Typography>
       <Typography>This radio is {radio.hash}</Typography>
       <Typography>Created by {radio.createdBy.name}</Typography>
+      <Typography>Share URL: {radioJoinUrl}</Typography>
 
       {user.isCreator &&
       <Button
