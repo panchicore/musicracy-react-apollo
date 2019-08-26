@@ -1,14 +1,9 @@
-import React, {useState, useEffect, useContext} from 'react'
-import {makeStyles} from '@material-ui/core/styles'
-import Paper from '@material-ui/core/Paper'
-import InputBase from '@material-ui/core/InputBase'
-import Divider from '@material-ui/core/Divider'
-import IconButton from '@material-ui/core/IconButton'
+import React, {useContext, useState} from 'react'
+import {Divider, IconButton, InputBase, makeStyles, Paper} from '@material-ui/core'
 import MenuIcon from '@material-ui/icons/Menu'
 import CloseIcon from '@material-ui/icons/Close'
 import SearchIcon from '@material-ui/icons/Search'
 import TvIcon from '@material-ui/icons/Tv'
-import _ from "lodash"
 import {SearchContext} from "../contexts"
 
 const useStyles = makeStyles({
@@ -32,7 +27,7 @@ const useStyles = makeStyles({
   },
 })
 
-export default function SearchInputBase() {
+export default function SearchInputBase({toggleDrawer}) {
   const classes = useStyles()
 
   const searchContext = useContext(SearchContext)
@@ -49,7 +44,7 @@ export default function SearchInputBase() {
 
   return (
     <Paper className={classes.root}>
-      <IconButton className={classes.iconButton} aria-label="menu">
+      <IconButton className={classes.iconButton} aria-label="menu" onClick={toggleDrawer}>
         <MenuIcon/>
       </IconButton>
       <InputBase
