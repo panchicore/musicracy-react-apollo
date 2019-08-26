@@ -19,11 +19,10 @@ function Search({radioId}) {
 
   const classes = useStyles()
   const searchContext = useContext(SearchContext)
-  const variables = {radioId, filter: searchContext.querySearch}
   const {enqueueSnackbar} = useSnackbar()
 
   const {loading, error, data} = useQuery(SEARCH_MEDIA_QUERY, {
-    variables,
+    variables: {radioId, filter: searchContext.querySearch},
     fetchPolicy: 'network-only'
   })
 
