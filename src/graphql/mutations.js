@@ -28,6 +28,12 @@ export const CONNECT_RADIO_MUTATION = gql`
     mutation ConnectToRadioMutation($hash: String!){
         connectToRadio(hash: $hash){
             id
+            hash
+            createdBy {
+                id
+                email
+                name
+            }
         }
     }
 `
@@ -72,6 +78,20 @@ export const PLAY_MUTATION = gql`
         play(
             radioId: $radioId
             mediaItemId: $mediaItemId
+        ){
+            id
+            title
+            status
+        }
+    }
+`
+
+export const FINISH_MUTATION = gql`
+    mutation FinishMutation($radioId: String!, $mediaItemId: String!, $playNext: Boolean!){
+        finish(
+            radioId: $radioId
+            mediaItemId: $mediaItemId
+            playNext: $playNext
         ){
             id
             title

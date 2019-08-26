@@ -4,7 +4,6 @@ export const typeDefs = gql`
     extend type Query {
         isLoggedIn: Boolean!
         user: User
-        currentRadioId: String
     }
     
     extend type User {
