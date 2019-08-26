@@ -1,11 +1,11 @@
-import React, {useState} from "react"
+import React, {useEffect, useState} from "react"
 import YouTube from 'react-youtube'
-import {useSubscription} from "react-apollo-hooks"
-import {NEW_MEDIA_ITEM_SUBSCRIPTION, PLAY_MUTATION, RADIO_QUERY, UPDATED_MEDIA_ITEM_SUBSCRIPTION} from "../../graphql"
-import {CURRENT_RADIO_ID} from "../../constants"
-import {Box, Grid, makeStyles, Paper} from "@material-ui/core"
-import {Mutation, Query} from "react-apollo"
+import {useMutation, useQuery, useSubscription} from "react-apollo-hooks"
+import {NEW_MEDIA_ITEM_SUBSCRIPTION, UPDATED_MEDIA_ITEM_SUBSCRIPTION} from "../../graphql"
+import {makeStyles} from "@material-ui/core"
 import {withRouter} from "react-router"
+import {FINISH_MUTATION} from "../../graphql/mutations"
+import gql from "graphql-tag"
 
 const YOUTUBE_IFRAME_OPTIONS = {
   height: '490',
@@ -16,151 +16,164 @@ const YOUTUBE_IFRAME_OPTIONS = {
 }
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    flexGrow: 1,
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: 'center',
-    color: theme.palette.text.secondary,
-  },
+  youtubeIframe: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+  }
 }));
+
+function FinishItem({radioId, item, onNext}){
+  // mutate the item finished to play
+  // backend 1. set it as finished, 2. set next item as NOW PLAYING if available, 3. returns it
+
+  const [finishIt, {loading}] = useMutation(FINISH_MUTATION, {
+    variables: {
+      radioId,
+      mediaItemId: item.id,
+      playNext: true
+    }
+  })
+
+  useEffect(() => {
+    finishIt()
+    onNext()
+  }, [])
+
+  return null
+}
+
+function PlayItem({item, onFinish}){
+  const classes = useStyles()
+  return (
+    <YouTube
+      className={classes.youtubeIframe}
+      videoId={item.externalId}
+      opts={YOUTUBE_IFRAME_OPTIONS}
+      onReady={() => {}}
+      onStateChange={({target, data}) => {
+        /*
+        -1 (unstarted)
+        0 (ended)
+        1 (playing)
+        2 (paused)
+        3 (buffering)
+        5 (video cued).
+       */
+        if(data===0){
+
+          onFinish()
+
+        }
+      }}
+    />
+  )
+}
+
+const NOW_PLAYING_QUERY = gql`
+    fragment Item on MediaItem{
+        id
+        title
+        status
+        externalId
+        source
+        thumbnailUrl
+        channelTitle
+        publishedAt
+        sentBy{
+            id
+            name
+        }
+        sentAt
+    }
+    query RadioQuery($radioId: ID!){
+        radio(id: $radioId) {
+            itemsPlaying{
+                ...Item
+            }
+        }
+    }
+`
+
 
 function Player({match}){
 
-  const [nowPlaying, setNowPlaying] = useState(null)
-  const [nextToPlay, setNextToPlay] = useState(null)
-  const [queue, setQueue] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState(null)
-
   const classes = useStyles()
   const radioId = match.params.radioId
-  const [playNextMediaItem, setPlayNextMediaItem] = useState(undefined)
+  const [nowPlaying, setNowPlaying] = useState(null)
+  const [finish, setFinish] = useState(null)
 
-  // detect new QUEUED items
-  useSubscription(NEW_MEDIA_ITEM_SUBSCRIPTION, {
-    variables: {radioId},
-    onSubscriptionData: ({client, subscriptionData}) => {
-      console.log("NEW_MEDIA_ITEM_SUBSCRIPTION", subscriptionData)
-      const {radioMediaItemCreated} = subscriptionData.data
-      if (radioMediaItemCreated.status !== "QUEUED"){
-        return null
-      }
-      let data = client.readQuery({query: RADIO_QUERY, variables: {radioId}})
-      data.radio = {
-        ...data.radio,
-        itemsQueued: [...data.radio.itemsQueued, radioMediaItemCreated]
-      }
-      client.writeQuery({query: RADIO_QUERY, variables: {radioId}, data})
-    }
+  const {loading, error, data} = useQuery(NOW_PLAYING_QUERY, {
+    variables: {radioId}
   })
+
+  console.log(data)
+
+  useEffect(() => {
+    if(data && nowPlaying === null){
+
+      if(data.radio.itemsPlaying.length > 0){
+        setNowPlaying(data.radio.itemsPlaying[0])
+      }
+    }
+  }, [data])
+
+  const onFinish = (playNext) => {
+    setFinish(nowPlaying)
+    setNowPlaying(null)
+  }
+
+  const onNext = () => {
+    setFinish(null)
+  }
 
   // detect new NOW PLAYING items
   useSubscription(UPDATED_MEDIA_ITEM_SUBSCRIPTION, {
     variables: {radioId},
-    onSubscriptionData: ({client, subscriptionData}) => {
-      console.log("UPDATED_MEDIA_ITEM_SUBSCRIPTION", subscriptionData)
-      const {radioMediaItemUpdated} = subscriptionData.data
-      let data = client.readQuery({query: RADIO_QUERY, variables: {radioId}})
-      data.radio = {
-        ...data.radio,
-        itemsQueued: data.radio.itemsQueued.filter(mediaItem => mediaItem.id !== radioMediaItemUpdated.id),
-        itemsPlaying: [radioMediaItemUpdated]
+    onSubscriptionData: ({client, subscriptionData: {data: {radioMediaItemUpdated}}}) => {
+      console.log("UPDATED_MEDIA_ITEM_SUBSCRIPTION", radioMediaItemUpdated)
+      if(radioMediaItemUpdated.status === 'NOW_PLAYING'){
+        setNowPlaying(radioMediaItemUpdated)
       }
-      client.writeQuery({query: RADIO_QUERY, variables: {radioId}, data})
     }
   })
 
-  console.log("playNextMediaItem", playNextMediaItem)
-  if(playNextMediaItem !== undefined){
-    const mediaItemId = playNextMediaItem === null ? null : playNextMediaItem.id
+  useSubscription(NEW_MEDIA_ITEM_SUBSCRIPTION, {
+    variables: {radioId},
+    onSubscriptionData: ({client, subscriptionData: {data: {radioMediaItemCreated}}}) => {
+      console.log("NEW_MEDIA_ITEM_SUBSCRIPTION", radioMediaItemCreated)
+      if(radioMediaItemCreated.status === 'NOW_PLAYING' && nowPlaying === null ){
+        setNowPlaying(radioMediaItemCreated)
+      }
+    }
+  })
+
+  if(finish){
     return (
-      <Mutation
-        mutation={PLAY_MUTATION}
-        variables={{radioId, mediaItemId}}
-        onCompleted={() => setPlayNextMediaItem(undefined)}>
-        {(playMutation, {loading, error, data}) => {
-          playMutation()
-          return null
-        }}
-      </Mutation>
+      <FinishItem radioId={radioId} item={finish} onNext={onNext} />
     )
   }
 
-
+  if(nowPlaying){
+    return (
+      <div>
+        <PlayItem radioId={radioId} item={nowPlaying} onFinish={onFinish} />
+      </div>
+    )
+  }
 
   return (
-
-    <Query query={RADIO_QUERY} variables={{radioId}} fetchPolicy={'network-only'}>
-      {({data, loading, error}) => {
-
-        console.log(error)
-
-        if(loading){
-          return (<div>Loading...</div>)
-        }
-
-        if(error){
-          return (<div>{error.message}</div>)
-        }
-
-        let {radio, user} = data
-        const {itemsPlaying, itemsQueued, itemsPlayed, people} = radio
-
-        const nowPlaying = itemsPlaying.length > 0 ? itemsPlaying[0] : null
-        const nextMediaItem = itemsQueued.length > 0 ? itemsQueued[0] : null
-
-        return (
-
-          <Box m={2} className={classes.root}>
-            <Grid container spacing={2}>
-              <Grid item xs={8}>
-                <Paper className={classes.paper}>
-                  {nowPlaying &&
-                    <YouTube
-                      videoId={nowPlaying.externalId}
-                      opts={YOUTUBE_IFRAME_OPTIONS}
-                      onReady={() => {}}
-                      onStateChange={({target, data}) => {
-                        /*
-                        -1 (unstarted)
-                        0 (ended)
-                        1 (playing)
-                        2 (paused)
-                        3 (buffering)
-                        5 (video cued).
-                       */
-                        if(data===0){
-
-                          setPlayNextMediaItem(nextMediaItem)
-
-                        }
-                      }}
-                    />
-                  }
-                </Paper>
-              </Grid>
-              <Grid item xs={4}>
-
-                  <Box>
-
-                    {itemsQueued.map(item => (
-                      <Paper key={item.id} className={classes.paper}>
-                        {item.title}
-                      </Paper>
-                    ))}
-                  </Box>
-
-              </Grid>
-
-            </Grid>
-          </Box>
-
-        )
-      }}
-    </Query>
+    <div>
+      <p>Musicracy Player, press play on your phone radio to start.</p>
+      {loading && <p>Loading music...</p>}
+      {error && <p>Error: {error.message}</p>}
+    </div>
   )
+
 }
 
 export default withRouter(Player)
