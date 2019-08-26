@@ -1,4 +1,4 @@
-import React, {useState, useContext, useEffect} from "react"
+import React, {useContext, useEffect, useState} from "react"
 import {Route, Switch, withRouter} from "react-router"
 import {AppBar, BottomNavigation, BottomNavigationAction, Box, CircularProgress} from "@material-ui/core"
 import {makeStyles} from '@material-ui/core/styles'
@@ -10,8 +10,8 @@ import {NEW_MEDIA_ITEM_SUBSCRIPTION, RADIO_QUERY, UPDATED_MEDIA_ITEM_SUBSCRIPTIO
 import {Link} from "react-router-dom"
 import Playlist from "./Playlist"
 import Search from "./Search"
+import RadioDrawer from "./RadioDrawer"
 import {Query} from "react-apollo"
-import {CURRENT_RADIO_ID} from "../../constants"
 import SearchInputBase from "./SearchInputBase"
 import People from "./People"
 import {useSnackbar} from "notistack"
@@ -19,6 +19,7 @@ import {useSubscription} from "react-apollo-hooks"
 import Info from "./Info"
 import {SearchContext} from "./contexts"
 import _ from "lodash"
+import {CURRENT_RADIO_ID} from "../../constants"
 
 const useStyles = makeStyles(theme => ({
   bottomNavigationAppBar: {
@@ -61,8 +62,13 @@ function Radio({history}) {
   const searchContext = useContext(SearchContext)
   const radioId = localStorage.getItem(CURRENT_RADIO_ID)
   const [querySearch, setQuerySearch] = useState('')
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const { enqueueSnackbar } = useSnackbar()
   const classes = useStyles()
+
+  const toggleDrawer = () => {
+    setIsDrawerOpen(!isDrawerOpen)
+  }
 
   useEffect(() => {
     setQuerySearch(searchContext.querySearch)
@@ -70,41 +76,66 @@ function Radio({history}) {
 
   useSubscription(NEW_MEDIA_ITEM_SUBSCRIPTION, {
     variables: {radioId},
-    onSubscriptionData: ({client, subscriptionData}) => {
-      const {radioMediaItemCreated} = subscriptionData.data
+    onSubscriptionData: ({client, subscriptionData: {data: {radioMediaItemCreated}}}) => {
+
+      console.log("radioMediaItemCreated", radioMediaItemCreated)
       enqueueSnackbar(`${radioMediaItemCreated.title} was added by ${radioMediaItemCreated.sentBy.name}`)
 
       let data = client.readQuery({query: RADIO_QUERY, variables: {radioId}})
-      data.radio = {
-        ...data.radio,
-        itemsQueued: [...data.radio.itemsQueued, radioMediaItemCreated]
+
+      if(radioMediaItemCreated.status === 'QUEUED'){
+        data.radio = {
+          ...data.radio,
+          itemsQueued: [...data.radio.itemsQueued, radioMediaItemCreated]
+        }
+      }else if(radioMediaItemCreated.status === 'NOW_PLAYING'){
+        data.radio = {
+          ...data.radio,
+          itemsPlaying: [radioMediaItemCreated]
+        }
       }
+
       client.writeQuery({query: RADIO_QUERY, variables: {radioId}, data})
     }
   })
 
   useSubscription(UPDATED_MEDIA_ITEM_SUBSCRIPTION, {
     variables: {radioId},
-    onSubscriptionData: ({client, subscriptionData}) => {
-      const {radioMediaItemUpdated} = subscriptionData.data
+    onSubscriptionData: ({client, subscriptionData: {data: {radioMediaItemUpdated}}}) => {
+
       console.log("radioMediaItemUpdated", radioMediaItemUpdated)
-      enqueueSnackbar(`Now playing ${radioMediaItemUpdated.title}`)
 
       let data = client.readQuery({query: RADIO_QUERY, variables: {radioId}})
-      data.radio = {
-        ...data.radio,
-        itemsQueued: data.radio.itemsQueued.filter(mediaItem => mediaItem.id !== radioMediaItemUpdated.id),
-        itemsPlayed: _.flatten([data.radio.itemsPlaying, ...data.radio.itemsPlayed]),
-        itemsPlaying: [radioMediaItemUpdated]
+
+      if(radioMediaItemUpdated.status === 'NOW_PLAYING'){
+        enqueueSnackbar(`Now playing ${radioMediaItemUpdated.title}`)
+        data.radio = {
+          ...data.radio,
+          itemsQueued: data.radio.itemsQueued.filter(mediaItem => mediaItem.id !== radioMediaItemUpdated.id),
+          itemsPlayed: _.flatten([data.radio.itemsPlaying, ...data.radio.itemsPlayed]),
+          itemsPlaying: [radioMediaItemUpdated]
+        }
+      }else if(radioMediaItemUpdated.status === 'PLAYED'){
+        data.radio = {
+          ...data.radio,
+          itemsPlaying: data.radio.itemsPlaying.filter(mediaItem => mediaItem.id !== radioMediaItemUpdated.id),
+          itemsPlayed: [radioMediaItemUpdated, ...data.radio.itemsPlayed],
+          itemsQueued: data.radio.itemsQueued.filter(mediaItem => mediaItem.id !== radioMediaItemUpdated.id),
+        }
       }
+
       client.writeQuery({query: RADIO_QUERY, variables: {radioId}, data})
+
     }
   })
 
   return (
     <SearchContext.Provider value={{querySearch, setQuerySearch}}>
+
+      <RadioDrawer isDrawerOpen={isDrawerOpen} toggleDrawer={toggleDrawer} />
+
       <Box>
-        <SearchInputBase  />
+        <SearchInputBase toggleDrawer={toggleDrawer} />
 
         {querySearch.length > 3 ? (
           <Search radioId={radioId} />
