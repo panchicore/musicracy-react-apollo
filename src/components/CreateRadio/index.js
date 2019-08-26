@@ -1,30 +1,20 @@
 import React, {useEffect, useState} from "react"
 import {AUTH_TOKEN, CURRENT_RADIO_ID} from "../../constants"
 import {withRouter} from "react-router"
-import {Box, TextField, Typography, Button, makeStyles} from "@material-ui/core"
+import {Box, Button, Container, makeStyles, TextField, Typography} from "@material-ui/core"
 import Mutation from "react-apollo/Mutation"
 import {CREATE_RADIO_MUTATION} from "../../graphql/mutations"
 import {useSnackbar} from "notistack"
-
 
 const useStyles = makeStyles(theme => ({
   container: {
     display: 'flex',
     flexWrap: 'wrap',
-  },
-  textField: {
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1),
-    width: 200,
-  },
-  button: {
-    margin: theme.spacing(1),
   }
 }));
 
 function CreateRadio({history}){
 
-  const classes = useStyles()
   const [name, setName] = useState('')
   const [error, setError] = useState(null)
   const {enqueueSnackbar} = useSnackbar()
@@ -46,24 +36,29 @@ function CreateRadio({history}){
   }
 
   return (
-    <Box>
-      
-      <Typography variant="h1" component="h2" gutterBottom>
-        Create Radio
-      </Typography>
+    <Container maxWidth="sm">
 
-      <Box>
-        <TextField
-          id="standard-name"
-          label="Name"
-          className={classes.textField}
-          value={name}
-          onChange={event => setName(event.target.value)}
-          margin="normal"
-        />
+      <Box display="flex" justifyContent="center" m={3}>
+        <Typography variant="h3">
+          Create a Radio
+        </Typography>
       </Box>
 
       <Box>
+
+        <TextField
+          id="standard-name"
+          label="Name"
+          value={name}
+          onChange={event => setName(event.target.value)}
+          margin="normal"
+          variant="outlined"
+          fullWidth
+          required
+        />
+      </Box>
+
+      <Box m={1}>
         <Mutation
           mutation={CREATE_RADIO_MUTATION}
           variables={{name}}
@@ -74,17 +69,27 @@ function CreateRadio({history}){
             <Button
               variant="contained"
               color="primary"
-              className={classes.button}
               disabled={loading === true}
               onClick={createRadioMutation}
+              fullWidth
             >
-              {loading ? 'Creating...':'Create'}
+              {loading ? 'Creating...':'Create and join'}
             </Button>
           )}
         </Mutation>
       </Box>
 
-    </Box>
+      <Box m={1}>
+        <Button
+          onClick={() => history.goBack()}
+          variant="clear"
+          fullWidth
+        >
+          or Cancel
+        </Button>
+      </Box>
+
+    </Container>
   )
 }
 
