@@ -1,6 +1,5 @@
-import React, {useRef} from "react"
-import {makeStyles} from "@material-ui/core"
-import {List, Typography, Box} from "@material-ui/core"
+import React from "react"
+import {Box, List, Typography} from "@material-ui/core"
 import PlaylistItem from "../PlaylistItem"
 
 function PlaylistItemWrapper({user, radioId, items, mode}) {
