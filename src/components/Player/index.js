@@ -31,7 +31,7 @@ function FinishItem({radioId, item, onNext}){
   // mutate the item finished to play
   // backend 1. set it as finished, 2. set next item as NOW PLAYING if available, 3. returns it
 
-  const [finishIt, {loading}] = useMutation(FINISH_MUTATION, {
+  const [finishIt] = useMutation(FINISH_MUTATION, {
     variables: {
       radioId,
       mediaItemId: item.id,
@@ -102,7 +102,6 @@ const NOW_PLAYING_QUERY = gql`
 
 function Player({match}){
 
-  const classes = useStyles()
   const radioId = match.params.radioId
   const [nowPlaying, setNowPlaying] = useState(null)
   const [finish, setFinish] = useState(null)

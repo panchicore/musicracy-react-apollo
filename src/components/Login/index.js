@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react'
+import React, {useEffect} from 'react'
 import {useApolloClient, useMutation} from 'react-apollo-hooks'
 import {AUTH_TOKEN} from "../../constants"
 import {withRouter} from "react-router"
@@ -12,29 +12,21 @@ function Login({location, history}) {
     redirectTo = location.state.from.pathname
   }
 
-  const saveUserData = (token, user) => {
-    localStorage.setItem(AUTH_TOKEN, token)
-    // localStorage.setItem(USER_NAME, name)
-    client.writeData({
-      data: {
-        isLoggedIn: true,
-        user: user
-      }
-    })
-  }
-
-  const confirm = async data => {
-    const {token} = data.anonymousSignup
-    const {user} = data.anonymousSignup
-    saveUserData(token, user)
-    history.push(redirectTo)
-  }
-
   const [mutation, {error, data}] = useMutation(SIGNUP_MUTATION)
 
-  if (data) {
-    confirm(data)
-  }
+  useEffect(() => {
+    if (data) {
+      const {token, user} = data.anonymousSignup
+      localStorage.setItem(AUTH_TOKEN, token)
+      client.writeData({
+        data: {
+          isLoggedIn: true,
+          user: user
+        }
+      })
+      history.push(redirectTo)
+    }
+  }, [data])
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem(AUTH_TOKEN)

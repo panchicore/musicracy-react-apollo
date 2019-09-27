@@ -1,10 +1,7 @@
-import React, {useContext} from "react"
-import {Drawer, Divider, List, ListItem, ListItemIcon, ListItemText, makeStyles} from "@material-ui/core"
+import React from "react"
+import {Drawer, List, ListItem, ListItemText, makeStyles} from "@material-ui/core"
 import {withRouter} from "react-router"
-import {RadioContext} from "../contexts"
-import {RADIO_JOIN_URL} from "../../../constants"
-import {useApolloClient} from "react-apollo-hooks"
-
+import {CURRENT_RADIO_ID} from "../../../constants"
 
 const useStyles = makeStyles({
   list: {
@@ -15,11 +12,15 @@ const useStyles = makeStyles({
 function RadioDrawer({isDrawerOpen, toggleDrawer, history}){
 
   const classes = useStyles()
-  const client = useApolloClient()
 
   const exitRadio = () => {
-    client.writeData({data: {currentRadio: null}})
-    history.push(RADIO_JOIN_URL.replace("/:radioId", ""))
+    localStorage.removeItem(CURRENT_RADIO_ID)
+    history.push('/join')
+  }
+
+  const createRadio = () => {
+    localStorage.removeItem(CURRENT_RADIO_ID)
+    history.push('/start')
   }
 
   return (
@@ -31,18 +32,20 @@ function RadioDrawer({isDrawerOpen, toggleDrawer, history}){
         onKeyDown={toggleDrawer}
       >
         <List>
-
-            <ListItem button>
-              <ListItemText primary='Login or register' secondary='Recover your songs' />
+            <ListItem button disabled>
+              <ListItemText primary='My Music' secondary='You always listen to them' />
             </ListItem>
+            <ListItem button disabled>
+              <ListItemText primary='Login or register' secondary='Enable my music' />
+            </ListItem>
+
             <ListItem button>
               <ListItemText primary='Exit radio' onClick={exitRadio} />
             </ListItem>
+
             <ListItem button>
-              <ListItemText primary='Create my own radio' />
+              <ListItemText primary='Create my own radio' onClick={createRadio} />
             </ListItem>
-
-
 
         </List>
         {/*<Divider />*/}

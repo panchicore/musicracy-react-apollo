@@ -17,7 +17,7 @@ import {WebSocketLink} from 'apollo-link-ws'
 import {getMainDefinition} from 'apollo-utilities'
 import {resolvers, typeDefs} from "./graphql"
 
-const SERVER = '192.168.0.15:4000'
+const SERVER = '192.168.0.14:4000'
 
 const httpLink = createHttpLink({
   uri: `http://${SERVER}`,

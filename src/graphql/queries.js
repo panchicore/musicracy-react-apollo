@@ -1,7 +1,7 @@
 import gql from "graphql-tag"
 
 export const USER_QUERY = gql`
-    query CurrentUser {
+    {
         user @client{
             id
             email

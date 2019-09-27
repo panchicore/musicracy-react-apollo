@@ -61,6 +61,10 @@ function Radio({history}) {
 
   const searchContext = useContext(SearchContext)
   const radioId = localStorage.getItem(CURRENT_RADIO_ID)
+  if(!radioId){
+    history.push('/join')
+  }
+
   const [querySearch, setQuerySearch] = useState('')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const { enqueueSnackbar } = useSnackbar()

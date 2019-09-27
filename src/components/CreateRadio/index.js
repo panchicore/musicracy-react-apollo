@@ -1,17 +1,10 @@
 import React, {useEffect, useState} from "react"
 import {AUTH_TOKEN, CURRENT_RADIO_ID} from "../../constants"
 import {withRouter} from "react-router"
-import {Box, Button, Container, makeStyles, TextField, Typography} from "@material-ui/core"
+import {Box, Button, Container, TextField, Typography} from "@material-ui/core"
 import Mutation from "react-apollo/Mutation"
 import {CREATE_RADIO_MUTATION} from "../../graphql/mutations"
 import {useSnackbar} from "notistack"
-
-const useStyles = makeStyles(theme => ({
-  container: {
-    display: 'flex',
-    flexWrap: 'wrap',
-  }
-}));
 
 function CreateRadio({history}){
 
