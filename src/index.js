@@ -17,10 +17,11 @@ import {WebSocketLink} from 'apollo-link-ws'
 import {getMainDefinition} from 'apollo-utilities'
 import {resolvers, typeDefs} from "./graphql"
 
-const SERVER = '192.168.0.14:4000'
+const SERVER = 'http://192.168.0.15:4000'
+console.log(process.env)
 
 const httpLink = createHttpLink({
-  uri: `http://${SERVER}`,
+  uri: `${SERVER}`,
 })
 
 const authLink = setContext((_, {headers}) => {
@@ -34,7 +35,7 @@ const authLink = setContext((_, {headers}) => {
 })
 
 const wsLink = new WebSocketLink({
-  uri: `ws://${SERVER}`,
+  uri: `ws://${SERVER.split('//')[1]}`,
   options: {
     reconnect: true,
     connectionParams: {
