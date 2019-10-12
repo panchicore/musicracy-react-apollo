@@ -21,7 +21,7 @@ let SERVER = 'http://192.168.0.15:4000'
 let SERVER_WS = 'ws://192.168.0.15:4000'
 if(process.env.NODE_ENV === "production"){
   SERVER = 'https://api.musicracy.com/graphql'
-  SERVER_WS = 'https://api.musicracy.com/graphql'
+  SERVER_WS = 'wss://api.musicracy.com/graphql'
 }
 
 const httpLink = createHttpLink({
