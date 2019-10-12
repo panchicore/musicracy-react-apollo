@@ -17,11 +17,15 @@ import {WebSocketLink} from 'apollo-link-ws'
 import {getMainDefinition} from 'apollo-utilities'
 import {resolvers, typeDefs} from "./graphql"
 
-const SERVER = 'http://192.168.0.15:4000'
-console.log(process.env)
+let SERVER = 'http://192.168.0.15:4000'
+let SERVER_WS = 'ws://192.168.0.15:4000'
+if(process.env.NODE_ENV === "production"){
+  SERVER = 'https://api.musicracy.com'
+  SERVER_WS = 'wss://api.musicracy.com'
+}
 
 const httpLink = createHttpLink({
-  uri: `${SERVER}`,
+  uri: SERVER,
 })
 
 const authLink = setContext((_, {headers}) => {
@@ -35,7 +39,7 @@ const authLink = setContext((_, {headers}) => {
 })
 
 const wsLink = new WebSocketLink({
-  uri: `ws://${SERVER.split('//')[1]}`,
+  uri: SERVER_WS,
   options: {
     reconnect: true,
     connectionParams: {
