@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react"
 import {withRouter} from "react-router"
-import {Box, Button, Container, TextField, Typography} from "@material-ui/core"
+import {Box, Button, Container, TextField, Typography, Grid} from "@material-ui/core"
 import {CONNECT_RADIO_MUTATION, USER_QUERY} from "../../graphql"
 import {CURRENT_RADIO_ID} from "../../constants"
 import {useSnackbar} from "notistack"
@@ -75,7 +75,7 @@ function Join({history, match}){
       </Box>
 
       <Box>
-        <Button variant="contained" color="primary" onClick={() => {}} fullWidth>
+        <Button variant="contained" color="primary" onClick={() => {}} fullWidth disabled>
           Login
         </Button>
       </Box>
