@@ -20,8 +20,8 @@ import {resolvers, typeDefs} from "./graphql"
 let SERVER = 'http://192.168.0.15:4000'
 let SERVER_WS = 'ws://192.168.0.15:4000'
 if(process.env.NODE_ENV === "production"){
-  SERVER = 'https://api.musicracy.com/graphql'
-  SERVER_WS = 'wss://api.musicracy.com/graphql'
+  SERVER = 'https://api.musicracy.com'
+  SERVER_WS = 'wss://api.musicracy.com'
 }
 
 const httpLink = createHttpLink({
